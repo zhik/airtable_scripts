@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
-const env = require('dotenv').config();
+const fs = require('fs');
+require('dotenv').config();
 
 (async () => {
   const browser = await puppeteer.launch({ headless: false });
@@ -39,19 +40,38 @@ const env = require('dotenv').config();
       .filter(link => link.text.toLowerCase().includes('0.3'));
   });
 
-  await page.goto(links[0].href);
+  const tables = [];
 
-  const tables = await page.evaluate(() => {
-    return window.application.tables.map(
-      ({ columns, sampleRows, isEmpty }) => ({
-        columns: columns.map(column => column.name),
-        sampleRows,
-        isEmpty
-      })
-    );
+  //get column and row info for each table
+  for (const link of links) {
+    await page.goto(link.href);
+
+    console.log(`Grabbing info for: ${link.text}`);
+    const details = await page.evaluate(() => {
+      return window.application.tables.map(
+        ({ columns, sampleRows, isEmpty }) => ({
+          columns: columns.map(column => column.name),
+          sampleRows,
+          isEmpty
+        })
+      );
+    });
+
+    await page.waitFor(1000);
+
+    tables.push({ details, name: link.text, href: link.href });
+  }
+
+  //save to json
+  await fs.writeFile('./data/tables.json', JSON.stringify(tables), function(
+    err
+  ) {
+    if (err) {
+      return console.log(err);
+    }
+
+    console.log('The file was saved!');
   });
 
-  console.log(tables[4].sampleRows[0]);
-
-  //await browser.close();
+  await browser.close();
 })();
