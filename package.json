@@ -1,0 +1,16 @@
+{
+  "name": "CBDB",
+  "version": "1.0.0",
+  "description": "",
+  "main": "get_airtables.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^8.1.0",
+    "puppeteer": "^1.20.0"
+  }
+}
