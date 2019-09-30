@@ -49,7 +49,8 @@ require('dotenv').config();
     console.log(`Grabbing info for: ${link.text}`);
     const details = await page.evaluate(() => {
       return window.application.tables.map(
-        ({ columns, sampleRows, isEmpty }) => ({
+        ({ columns, sampleRows, isEmpty, name }) => ({
+          name,
           columns: columns.map(column => column.name),
           sampleRows,
           isEmpty
