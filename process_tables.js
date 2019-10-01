@@ -77,19 +77,62 @@ const tableUsage = Object.keys(unique_tables_columns).map(table_name => {
   };
 });
 
-//init excel
+// //init excel
+const workbook = XLSX.readFile('./default.xlsx');
 const wb = XLSX.utils.book_new();
 
-tableUsage.forEach(table => {
-  //generate rows
-  const header = ['columns', ...table.dbs];
-  const data = table.columns
-    // .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1))
-    .map(column => {
-      return [column, ...table.entries.map(e => (e[column] ? e[column] : ''))];
-    });
-  const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
-  XLSX.utils.book_append_sheet(wb, ws, table.name.replace('/', '-'));
+//get default sheet and column to order them to the start for easy reference
+const defaultOrder = workbook.SheetNames.map(sheetName => {
+  const worksheet = workbook.Sheets[sheetName];
+  const columnA = [];
+
+  for (let z in worksheet) {
+    if (z.toString()[0] === 'A') {
+      const value = worksheet[z].v;
+      if (value) columnA.push(value);
+    }
+  }
+
+  return {
+    name: sheetName,
+    column: columnA
+  };
 });
+
+tableUsage
+  .sort((a, b) => {
+    function getValues(table) {
+      const findDefault = defaultOrder.find(sheet => sheet.name === table.name);
+      return findDefault ? defaultOrder.indexOf(findDefault) : 100;
+    }
+
+    return getValues(a) > getValues(b) ? 1 : -1;
+  })
+  .forEach(table => {
+    //generate rows
+    const header = ['columns', ...table.dbs];
+    const data = table.columns
+      .sort((a, b) => {
+        function getValues(column) {
+          const findDefault = defaultOrder.find(
+            sheet => sheet.name === table.name
+          );
+          if (!findDefault) {
+            return -1;
+          } else {
+            return findDefault.column.indexOf(column);
+          }
+        }
+        return getValues(a) > getValues(b) ? 1 : -1;
+      })
+      .map(column => {
+        return [
+          column,
+          ...table.entries.map(e => (e[column] ? e[column] : ''))
+        ];
+      });
+    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+    XLSX.utils.book_append_sheet(wb, ws, table.name.replace('/', '-'));
+  });
 
 XLSX.writeFile(wb, './data/usage.xlsx');
