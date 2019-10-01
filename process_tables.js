@@ -19,7 +19,7 @@ const db_sorted = dbs.sort((a, b) => {
   function getValues(name) {
     return [
       name.slice(0, 2).toLowerCase(),
-      parseInt(name.match(/CB(?<cb>[1-9]*)/).groups.cb)
+      parseInt(name.match(/CB(?<cb>[0-9]*)/).groups.cb)
     ];
   }
   const [a1, a2] = getValues(a.name);
@@ -27,7 +27,7 @@ const db_sorted = dbs.sort((a, b) => {
   if (a1 === b1) {
     return a2 > b2 ? 1 : -1;
   } else {
-    return a1 > b2 ? 1 : -1;
+    return a1 > b1 ? 1 : -1;
   }
 });
 
@@ -49,11 +49,11 @@ const tableUsage = Object.keys(unique_tables_columns).map(table_name => {
               )
             ) {
               //exists and filled
-              agg[t] = 'f';
+              agg[t] = 'fffffffff';
               return agg;
             }
             //exists but empty
-            agg[t] = '-';
+            agg[t] = '-------';
             return agg;
           }
         }
@@ -83,9 +83,11 @@ const wb = XLSX.utils.book_new();
 tableUsage.forEach(table => {
   //generate rows
   const header = ['columns', ...table.dbs];
-  const data = table.columns.map(column => {
-    return [column, ...table.entries.map(e => (e[column] ? e[column] : ''))];
-  });
+  const data = table.columns
+    // .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1))
+    .map(column => {
+      return [column, ...table.entries.map(e => (e[column] ? e[column] : ''))];
+    });
   const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
   XLSX.utils.book_append_sheet(wb, ws, table.name.replace('/', '-'));
 });
