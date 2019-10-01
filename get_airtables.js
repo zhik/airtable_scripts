@@ -40,14 +40,14 @@ require('dotenv').config();
       .filter(link => link.text.toLowerCase().includes('0.3'));
   });
 
-  const tables = [];
+  const dbs = [];
 
   //get column and row info for each table
   for (const link of links) {
     await page.goto(link.href);
 
     console.log(`Grabbing info for: ${link.text}`);
-    const details = await page.evaluate(() => {
+    const tables = await page.evaluate(() => {
       return window.application.tables.map(
         ({ columns, sampleRows, isEmpty, name }) => ({
           name,
@@ -60,13 +60,11 @@ require('dotenv').config();
 
     await page.waitFor(1000);
 
-    tables.push({ details, name: link.text, href: link.href });
+    dbs.push({ tables, name: link.text, href: link.href });
   }
 
   //save to json
-  await fs.writeFile('./data/tables.json', JSON.stringify(tables), function(
-    err
-  ) {
+  await fs.writeFile('./data/dbs.json', JSON.stringify(dbs), function(err) {
     if (err) {
       return console.log(err);
     }
