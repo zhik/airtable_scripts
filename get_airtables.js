@@ -1,6 +1,37 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const Airtable = require('airtable');
+
 require('dotenv').config();
+
+async function getTableCount(apiKey, baseKey, tableName, tableField) {
+  return new Promise(function(resolve, reject) {
+    var base = new Airtable({ apiKey }).base(baseKey);
+
+    let recordsCount = 0;
+
+    base(tableName)
+      .select({
+        fields: [tableField]
+      })
+      .eachPage(
+        function page(records, fetchNextPage) {
+          records.forEach(function(record) {
+            recordsCount += 1;
+          });
+
+          fetchNextPage();
+        },
+        function done(err) {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(recordsCount);
+        }
+      );
+  });
+}
 
 (async () => {
   const browser = await puppeteer.launch({ headless: false });
@@ -48,17 +79,30 @@ require('dotenv').config();
 
     console.log(`Grabbing info for: ${link.text}`);
     const tables = await page.evaluate(() => {
+      console.log(window.application.id);
       return window.application.tables.map(
         ({ columns, sampleRows, isEmpty, name }) => ({
           name,
           columns: columns.map(column => column.name),
           sampleRows,
-          isEmpty
+          isEmpty,
+          db_id: window.application.id
         })
       );
     });
 
-    await page.waitFor(1000);
+    //get counts for all tables
+    for (const table of tables) {
+      await page.waitFor(1000);
+      const count = await getTableCount(
+        process.env.API_KEY,
+        table.db_id,
+        table.name,
+        table.columns[0]
+      );
+
+      table.count = count;
+    }
 
     dbs.push({ tables, name: link.text, href: link.href });
   }

@@ -49,11 +49,11 @@ const tableUsage = Object.keys(unique_tables_columns).map(table_name => {
               )
             ) {
               //exists and filled
-              agg[t] = 'fffffffff';
+              agg[t] = 'f';
               return agg;
             }
             //exists but empty
-            agg[t] = '-------';
+            agg[t] = '-';
             return agg;
           }
         }
@@ -69,11 +69,22 @@ const tableUsage = Object.keys(unique_tables_columns).map(table_name => {
     }
   });
 
+  const counts = db_sorted.map(db => {
+    const matched_table = db.tables.find(table => table.name === table_name);
+    let count = 'n/a';
+    if (matched_table) {
+      count = matched_table.count;
+    }
+
+    return count;
+  });
+
   return {
     name: table_name,
     dbs: db_names,
     columns: table_columns,
-    entries
+    entries,
+    counts
   };
 });
 
@@ -111,6 +122,7 @@ tableUsage
   .forEach(table => {
     //generate rows
     const header = ['columns', ...table.dbs];
+    const countRow = ['count', ...table.counts];
     const data = table.columns
       .sort((a, b) => {
         function getValues(column) {
@@ -131,8 +143,13 @@ tableUsage
           ...table.entries.map(e => (e[column] ? e[column] : ''))
         ];
       });
-    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+    const ws = XLSX.utils.aoa_to_sheet([header, countRow, ...data]);
     XLSX.utils.book_append_sheet(wb, ws, table.name.replace('/', '-'));
   });
 
-XLSX.writeFile(wb, './data/usage.xlsx');
+function getDate() {
+  const d = new Date();
+  return `${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`;
+}
+
+XLSX.writeFile(wb, `./data/usage_${getDate()}.xlsx`);
