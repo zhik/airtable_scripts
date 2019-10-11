@@ -1,7 +1,7 @@
 const XLSX = require('xlsx');
 const fs = require('fs');
 
-const dbs = JSON.parse(fs.readFileSync('./data/dbs.json'));
+const dbs = JSON.parse(fs.readFileSync('./data/dbs_2019_10_11.json'));
 
 const unique_tables_columns = dbs.reduce((t, db) => {
   db.tables.forEach(table => {
